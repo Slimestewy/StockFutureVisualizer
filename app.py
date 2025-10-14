@@ -5,10 +5,19 @@ import altair as alt
 
 st.set_page_config(page_title="Stock Future Visualizer", layout="wide")
 
-# --- Home Button (top-left, clears ticker) ---
+# --- Home Button (configurable position) ---
 def go_home():
     st.session_state["ticker"] = ""
-st.button("Home", on_click=go_home)
+
+# Choose button position: "left", "center", "right"
+home_position = "left"  # Change this to move button
+
+col_left, col_center, col_right = st.columns([1, 6, 1])
+columns_dict = {"left": col_left, "center": col_center, "right": col_right}
+
+if st.session_state.get("ticker"):  # Only show button if ticker exists
+    with columns_dict[home_position]:
+        st.button("Home", on_click=go_home)
 
 # --- Header with emojis ---
 st.markdown("""
