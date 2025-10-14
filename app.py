@@ -46,10 +46,24 @@ def format_market_cap(market_cap):
 def apply_growth_decay(initial_growth, year_number, normal_growth_rate=0.15, high_growth_threshold=0.30):
     if initial_growth <= high_growth_threshold:
         return initial_growth
-    excess_growth = initial_growth - normal_growth_rate
-    decay_factor = 0.85 ** year_number
-    decayed_growth = normal_growth_rate + (excess_growth * decay_factor)
-    return max(decayed_growth, normal_growth_rate)
+    
+    # Set realistic floor based on initial growth magnitude
+    if initial_growth > 2.0:  # >200% growth
+        floor_rate = 0.25  # 25% floor for hyper-growth companies
+        decay_factor = 0.50 ** year_number
+    elif initial_growth > 1.0:  # >100% growth
+        floor_rate = 0.22  # 22% floor
+        decay_factor = 0.60 ** year_number
+    elif initial_growth > 0.50:  # >50% growth
+        floor_rate = 0.20  # 20% floor
+        decay_factor = 0.70 ** year_number
+    else:
+        floor_rate = normal_growth_rate  # 15% floor for moderate growth
+        decay_factor = 0.85 ** year_number
+    
+    excess_growth = initial_growth - floor_rate
+    decayed_growth = floor_rate + (excess_growth * decay_factor)
+    return max(decayed_growth, floor_rate)
 
 # --- Centered search box ---
 col1, col2, col3 = st.columns([1.5, 2, 1.5])
@@ -63,14 +77,16 @@ with col2:
 # --- Home Screen ---
 if not ticker:
     st.markdown("""
-        <div style="text-align: center; padding: 80px 20px;">
+        <div style="text-align: center; padding: 36px 20px;">
             <h1 style="font-size: 3em;">📊 Welcome to <span style="color:#00bfff;">Stock Future Visualizer</span></h1>
             <p style="font-size: 1.2em; color: gray; max-width: 600px; margin: auto;">
                 Explore future stock price projections based on real financial data.  
                 Enter a stock ticker (like <b>AAPL</b> or <b>NVDA</b>) above to get started.
             </p>
             <br>
-            <img src="https://cdn-icons-png.flaticon.com/512/2331/2331946.png" width="180" style="opacity:0.85;"/>
+            <img src="https://images.unsplash.com/photo-1565723858624-12d3614748e8?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=687" width="200" style="opacity:0.85;"/>
+            <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170" width="442" style="opacity:0.85;"/>
+            <img src="https://images.unsplash.com/photo-1506787497326-c2736dde1bef?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=692" width="200" style="opacity:0.85;"/>
             <br><br>
             <p style="color: #666; font-size: 0.8em;">Powered by Yahoo Finance + Streamlit</p>
             <p style="color: #666; font-size: 0.8em;">Programmed by Evan Kulesza</p>
@@ -97,10 +113,10 @@ if ticker:
         st.markdown(f"**Market Cap:** {format_market_cap(market_cap)}")
 
         if not net_income_val or net_income_val <= 0:
-            st.warning("Company does not have profits yet, can't predict share price for an unprofitable company.")
+            st.warning("Can't predict share price for an unprofitable company. Must be a individual company (not ETF).")
         else:
             st.sidebar.header("Projection Inputs")
-            scenario = st.sidebar.selectbox("Select Scenario", ["Base", "Bear", "Bull", "Custom"])
+            scenario = st.sidebar.selectbox("Select Scenario", ["Bear", "Base", "Bull", "Custom"], index=1)
             use_decay = st.sidebar.checkbox("Apply Growth Normalization", value=True, help="Automatically reduces abnormally high growth rates over time to more sustainable levels")
             st.sidebar.markdown("---")
 
@@ -201,7 +217,7 @@ if ticker:
             line = alt.Chart(df).mark_line(color="#b41f1f").encode(x='Year:O', y='Share Price Low ($):Q') + \
                    alt.Chart(df).mark_line(color="#2da721").encode(x='Year:O', y='Share Price High ($):Q')
             current_dot = alt.Chart(pd.DataFrame([{'Year': 2025, 'Price': current_price}])).mark_point(
-                color='black', size=80, filled=True
+                color="#FFFFFF", size=80, filled=True
             ).encode(x='Year:O', y='Price:Q', tooltip=[alt.Tooltip('Price:Q', title='Current Price')])
             chart = area + line + current_dot
             st.altair_chart(chart, use_container_width=True)
