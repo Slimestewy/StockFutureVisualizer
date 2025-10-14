@@ -1,5 +1,6 @@
 # StockFutureVisualizer
 A Streamlit app that helps visualize the future of profitable companies.
+<<<<<<< HEAD
 # 📊 Stock Future Visualizer
 
 A Python-based web app that estimates future stock prices using company fundamentals (revenue growth, net income, and P/E ratios). Built with Streamlit and Yahoo Finance API.
@@ -15,3 +16,5 @@ A Python-based web app that estimates future stock prices using company fundamen
 - Streamlit
 - yFinance
 - Pandas
+=======
+>>>>>>> a8fb16ce8eb8e1964b3381a408e03f0462661ba7
