@@ -1,42 +1,7 @@
 [theme]
-# Primary Accent Color (buttons, sliders, highlights)
-primaryColor = "#007aff"            # Vibrant Apple-blue accent
-
-# Background Colors
-backgroundColor = "#0a0b13"         # Rich near-black main background
-secondaryBackgroundColor = "#1a1b25" # Slightly lighter panels for contrast
-
-# Text & Font
-textColor = "#ffffff"               # Pure white text for clarity
-font = "sans serif"                 # Clean modern font (uses system UI font)
-
-# Optional Add-ons (not required but recommended)
-# These help Streamlit pick consistent styles internally
-base = "dark"                       # Tell Streamlit it’s a dark theme
-
-
-
-
-
-st.markdown("""
-<style>
-[data-testid="stAppViewContainer"] {
-    background-color: #0a0b13;
-}
-[data-testid="stSidebar"] {
-    background-color: #1a1b25;
-    border-right: 1px solid #1f1f2e;
-}
-.stButton button {
-    border-radius: 12px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-.stButton button:hover {
-    transform: scale(1.03);
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-
+base = "dark"
+primaryColor = "#007aff"
+backgroundColor = "#0a0b13"
+secondaryBackgroundColor = "#1a1b25"
+textColor = "#ffffff"
+font = "sans serif"

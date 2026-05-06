@@ -449,12 +449,7 @@ def render_analyst_targets(inputs: StockInputs) -> None:
     )
 
 
-def show_company_summary(
-    ticker: str,
-    inputs: StockInputs,
-    fallback_note: str | None,
-    data_warnings: list[str],
-) -> None:
+def show_company_summary(inputs: StockInputs, fallback_note: str | None, data_warnings: list[str]) -> None:
     render_analyst_targets(inputs)
 
     st.markdown(
@@ -464,15 +459,12 @@ def show_company_summary(
             <div style="font-size: 1.45rem; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere;">
                 {inputs.company_name}
             </div>
-            <div style="color: #00bfff; font-size: 1rem; font-weight: 700; margin-top: 0.2rem;">
-                {ticker.upper()}
-            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     col1.metric("Current Price", format_money(inputs.current_price))
     col2.metric("Market Cap", format_market_cap(inputs.market_cap))
     st.markdown(
@@ -552,7 +544,7 @@ def scenario_defaults(
 def render_sidebar_inputs(
     inputs: StockInputs,
     info: dict,
-) -> tuple[ProjectionSettings, list[DataQuality], bool, list[str]]:
+) -> tuple[ProjectionSettings, list[DataQuality], bool]:
     st.sidebar.header("Projection Inputs")
     view_mode = st.sidebar.radio("View Mode", ["Single Scenario", "Compare Bear/Base/Bull"], horizontal=False)
     scenario = st.sidebar.selectbox("Select Scenario", ["Bear", "Base", "Bull", "Custom"], index=1)
@@ -583,9 +575,8 @@ def render_sidebar_inputs(
 
     rev_growth_base, _, growth_quality = get_growth_assumptions(info)
 
-    projection_notes = []
     if use_decay and rev_growth_base > 0.40:
-        projection_notes.append(
+        st.info(
             f"High revenue growth detected ({rev_growth_base * 100:.1f}%). Growth normalization is active."
         )
 
@@ -650,7 +641,7 @@ def render_sidebar_inputs(
         use_decay=use_decay,
     )
     compare_mode = view_mode == "Compare Bear/Base/Bull"
-    return settings, growth_quality, compare_mode, projection_notes
+    return settings, growth_quality, compare_mode
 
 
 def build_projection_dataframe(
@@ -853,12 +844,6 @@ def render_scenario_explanation(settings: ProjectionSettings, compare_mode: bool
     )
 
 
-def render_projection_notes(settings: ProjectionSettings, compare_mode: bool, projection_notes: list[str]) -> None:
-    for note in projection_notes:
-        st.info(note)
-    render_scenario_explanation(settings, compare_mode)
-
-
 def render_centered_table(
     df: pd.DataFrame,
     width_ratio: float = 1.0,
@@ -992,11 +977,6 @@ def render_projection_table(title: str, df: pd.DataFrame, compare_mode: bool) ->
     else:
         render_simple_projection_view(df, compare_mode=False)
 
-
-def render_annual_operating_assumptions(df: pd.DataFrame, compare_mode: bool) -> None:
-    if compare_mode:
-        return
-
     with st.expander("View Annual Operating Assumptions"):
         growth_df = df[
             [
@@ -1007,8 +987,7 @@ def render_annual_operating_assumptions(df: pd.DataFrame, compare_mode: bool) ->
                 "Revenue (B)",
                 "Net Income (B)",
             ]
-        ].copy()
-        growth_df["Year"] = growth_df["Year"].astype(int).astype(str)
+        ]
         render_centered_table(growth_df, width_ratio=0.95, data_font_size="1rem", header_font_size="0.86rem")
 
 
@@ -1147,14 +1126,14 @@ def render_projection_app(ticker: str) -> None:
 
     inputs, data_warnings, quality = build_stock_inputs(info)
     inputs, info, fallback_note, quality = apply_quarterly_fallback(ticker, inputs, info, quality)
-    show_company_summary(ticker, inputs, fallback_note, data_warnings)
+    show_company_summary(inputs, fallback_note, data_warnings)
 
     if not inputs.net_income or inputs.net_income <= 0:
         st.warning("Can't predict share price for an unprofitable company. Use an individual profitable company, not an ETF.")
         render_data_quality_panel(quality)
         return
 
-    settings, growth_quality, compare_mode, projection_notes = render_sidebar_inputs(inputs, info)
+    settings, growth_quality, compare_mode = render_sidebar_inputs(inputs, info)
     quality.extend(growth_quality)
 
     if inputs.current_price <= 0:
@@ -1176,9 +1155,8 @@ def render_projection_app(ticker: str) -> None:
         table_title = f"{settings.scenario} Projection"
 
     render_final_year_summary(df, compare_mode)
+    render_scenario_explanation(settings, compare_mode)
     render_projection_table(table_title, df, compare_mode)
-    render_projection_notes(settings, compare_mode, projection_notes)
-    render_annual_operating_assumptions(df, compare_mode)
     render_assumptions_panel(settings, compare_mode)
     render_data_quality_panel(quality)
     render_projection_chart(df, inputs.current_price, inputs.target_mean, compare_mode)
